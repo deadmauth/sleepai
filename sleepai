@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleepy AI - ผู้ช่วยการนอนหลับอัจฉริยะ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Kanit', 'Inter', sans-serif;
+            /* พื้นหลังโทนกลางคืนที่ผ่อนคลาย */
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            background-attachment: fixed;
+            color: #e2e8f0;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-active {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.5);
+            color: #c4b5fd;
+        }
+
+        .tab-inactive {
+            background: transparent;
+            border-color: transparent;
+            color: #94a3b8;
+        }
+
+        .tab-inactive:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+
+        /* ซ่อน Scrollbar แต่ยัง scroll ได้ */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+            height: 6px;
+            width: 6px;
+            background: #a78bfa;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 1px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            20% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.2; transform: scale(0.8); }
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased flex flex-col items-center p-4 sm:p-8">
+
+    <div class="w-full max-w-2xl flex flex-col gap-6">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between glass-panel px-6 py-4 rounded-3xl shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-inner">
+                    <i data-lucide="moon" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-white tracking-wide">Sleepy AI</h1>
+                    <p class="text-xs text-indigo-300 font-light">ผู้ช่วยเพื่อการพักผ่อนของคุณ</p>
+                </div>
+            </div>
+            <!-- Buy me a coffee -->
+            <a href="#" class="hidden sm:flex items-center gap-2 text-xs text-amber-200/80 hover:text-amber-200 transition-colors border border-amber-200/20 hover:border-amber-200/50 bg-amber-500/10 px-4 py-2 rounded-full">
+                <i data-lucide="coffee" class="w-3.5 h-3.5"></i> เลี้ยงกาแฟ
+            </a>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex flex-col gap-6">
+            
+            <!-- Navigation Tabs -->
+            <div class="glass-panel p-1.5 rounded-2xl flex overflow-x-auto snap-x hide-scrollbar">
+                <button onclick="switchTab('coach')" id="tab-coach" class="tab-active flex-1 min-w-[100px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all snap-center">
+                    <i data-lucide="brain-circuit" class="w-4 h-4"></i> Coach
+                </button>
+                <button onclick="switchTab('dream')" id="tab-dream" class="tab-inactive flex-1 min-w-[100px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all snap-center">
+                    <i data-lucide="cloud-moon" class="w-4 h-4"></i> ทำนายฝัน
+                </button>
+                <button onclick="switchTab('story')" id="tab-story" class="tab-inactive flex-1 min-w-[100px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all snap-center">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> นิทาน
+                </button>
+                <button onclick="switchTab('places')" id="tab-places" class="tab-inactive flex-1 min-w-[100px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all snap-center">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i> สถานที่
+                </button>
+            </div>
+
+            <!-- Input Section -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                
+                <h2 id="section-title" class="text-lg font-medium text-white mb-2">ปรึกษาปัญหาการนอน</h2>
+                <p id="section-desc" class="text-sm text-slate-400 mb-4 font-light">พิมพ์อาการ หรือสิ่งที่คุณกังวล เพื่อให้ AI แนะนำวิธีแก้ปัญหา</p>
+                
+                <textarea id="user-input" rows="3" class="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all resize-none text-sm" placeholder="เช่น ช่วงนี้ตื่นกลางดึกบ่อยๆ ทำอย่างไรดี?"></textarea>
+                
+                <div class="flex justify-end mt-4">
+                    <button id="submit-btn" onclick="generateResponse()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-transform active:scale-95 flex items-center gap-2">
+                        <span>ส่งข้อความ</span>
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading-box" class="hidden glass-panel rounded-3xl p-8 flex flex-col items-center justify-center gap-4 shadow-xl">
+                <div class="typing-indicator flex gap-1">
+                    <span></span><span></span><span></span>
+                </div>
+                <p class="text-sm text-purple-300 animate-pulse font-light" id="loading-text">กำลังประมวลผลคำตอบ...</p>
+            </div>
+
+            <!-- Output Section -->
+            <div id="output-box" class="hidden flex flex-col gap-4">
+                
+                <!-- Result Panel -->
+                <div class="glass-panel rounded-3xl p-6 shadow-xl border-t border-t-purple-500/30">
+                    <div class="flex items-center gap-2 mb-4 pb-4 border-b border-white/10">
+                        <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-purple-300"></i>
+                        </div>
+                        <span class="text-white font-medium text-sm" id="output-title">คำตอบจาก AI</span>
+                    </div>
+
+                    <!-- Map Container (Hidden by default) -->
+                    <div id="map-container" class="hidden mb-6 rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-black/50 h-48 sm:h-64 relative">
+                        <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" class="absolute inset-0"></iframe>
+                    </div>
+
+                    <!-- AI Text Output -->
+                    <div id="ai-output-text" class="text-sm text-slate-200 leading-relaxed font-light">
+                        <!-- Content will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Affiliate: Shopee (Sleep Products) -->
+                <div id="product-recommendation" class="hidden glass-panel rounded-2xl p-4 border border-indigo-500/20">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-xs text-indigo-300 font-medium flex items-center gap-1.5"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> ไอเทมช่วยนอนหลับ</p>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-200 px-2 py-0.5 rounded-full">Sponsor</span>
+                    </div>
+                    <a href="https://shopee.co.th/search?keyword=สเปรย์ฉีดหมอน" target="_blank" class="flex items-center gap-4 bg-black/20 hover:bg-black/40 p-3 rounded-xl transition-colors border border-white/5 group">
+                        <div class="w-12 h-12 bg-indigo-900/50 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <i data-lucide="spray-can" class="w-6 h-6 text-indigo-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-white font-medium line-clamp-1">สเปรย์ฉีดหมอน Lavender ลับเฉพาะ</p>
+                            <p class="text-xs text-indigo-400 mt-0.5">เริ่มต้น ฿290 <span class="line-through text-slate-500 text-[10px]">฿450</span></p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-white"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Affiliate: Agoda (Places to stay) -->
+                <div id="booking-affiliate-banner" class="hidden">
+                    <a href="https://www.agoda.com/" target="_blank" class="block w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-medium py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95 text-center flex items-center justify-center gap-2 border border-blue-400/30">
+                        <i data-lucide="calendar-check" class="w-5 h-5"></i> เช็คราคาและจองที่พัก (ลดสูงสุด 30%)
+                    </a>
+                    <p class="text-center text-[10px] text-slate-500 mt-2">*การจองผ่านลิงก์นี้ช่วยสนับสนุนนักพัฒนาแอป</p>
+                </div>
+
+            </div>
+            
+            <!-- Mobile Buy me a coffee -->
+            <div class="sm:hidden text-center pt-4 pb-8">
+                <a href="#" class="inline-flex items-center gap-2 text-xs text-amber-200/60 hover:text-amber-200 transition-colors border border-transparent hover:border-amber-200/30 bg-white/5 px-4 py-2 rounded-full">
+                    <i data-lucide="coffee" class="w-3.5 h-3.5"></i> เลี้ยงกาแฟนักพัฒนา
+                </a>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Application State
+        let currentMode = 'coach';
+        
+        // Gemini API configuration
+        // NOTE: The key is intentionally left empty. Canvas platform will inject it during the fetch call.
+        const apiKey = ""; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        // Configuration for different modes
+        const modesConfig = {
+            coach: {
+                title: 'ปรึกษาปัญหาการนอน',
+                desc: 'พิมพ์อาการ หรือสิ่งที่คุณกังวล เพื่อให้ AI แนะนำวิธีแก้ปัญหา',
+                placeholder: 'เช่น ช่วงนี้ตื่นกลางดึกบ่อยๆ ทำอย่างไรดี?',
+                loading: 'กำลังวิเคราะห์พฤติกรรมการนอน...',
+                outTitle: 'คำแนะนำจาก Sleep Coach',
+                prompt: 'คุณคือ Sleep Coach ผู้เชี่ยวชาญด้านสุขภาพการนอนหลับ ให้คำแนะนำที่เป็นรูปธรรม อิงหลักวิทยาศาสตร์ แต่ใช้ภาษาเข้าใจง่าย เป็นข้อๆ สั้นๆ กระชับ สำหรับปัญหาการนอนนี้: '
+            },
+            dream: {
+                title: 'ทำนายฝัน',
+                desc: 'เล่าความฝันของคุณให้เราฟัง พร้อมรับคำทำนายและเลขนำโชค',
+                placeholder: 'เช่น ฝันเห็นงูตัวใหญ่รัดแขน...',
+                loading: 'กำลังเปิดตำราทำนายฝัน...',
+                outTitle: 'คำทำนายฝัน',
+                prompt: 'คุณคือผู้เชี่ยวชาญทำนายฝัน ทำนายฝันต่อไปนี้ให้หน่อย เขียนให้อ่านสบายใจ แบ่งหัวข้อชัดเจน (ความหมาย, คำแนะนำ) และขอเลขนำโชค 2 ตัว และ 3 ตัว ตอนท้าย ความฝันคือ: '
+            },
+            story: {
+                title: 'นิทานก่อนนอน',
+                desc: 'กำหนดหัวข้อ หรือตัวละคร เพื่อให้ AI แต่งนิทานกล่อมคุณนอน',
+                placeholder: 'เช่น นิทานเกี่ยวกับเจ้าหญิงบนดวงดาว...',
+                loading: 'กำลังร้อยเรียงเรื่องราว...',
+                outTitle: 'นิทานของคุณ',
+                prompt: 'แต่งนิทานก่อนนอนสั้นๆ (ประมาณ 2-3 ย่อหน้า) โทนอบอุ่น สร้างบรรยากาศชวนง่วง ใช้ภาษาที่ผ่อนคลาย โดยมีเนื้อหาเกี่ยวกับ: '
+            },
+            places: {
+                title: 'ค้นหาสถานที่พักผ่อน',
+                desc: 'บอกลักษณะสถานที่ที่คุณอยากไปพักผ่อนเพื่อชาร์จพลัง',
+                placeholder: 'เช่น อยากไปที่เงียบๆ ริมทะเล ใกล้กรุงเทพ...',
+                loading: 'กำลังค้นหาสถานที่ที่เหมาะกับคุณ...',
+                outTitle: 'สถานที่แนะนำ',
+                prompt: 'แนะนำสถานที่ท่องเที่ยว 1 แห่งในประเทศไทย ที่เหมาะกับการไปพักผ่อนเพื่อการนอนหลับที่ดี หรือชาร์จแบตชีวิต โดยอ้างอิงจากความต้องการนี้: "[INPUT]" กรุณาตอบโดยขึ้นต้นบรรทัดแรกด้วยคำว่า "สถานที่: [ชื่อสถานที่ชัดเจน]" จากนั้นขึ้นบรรทัดใหม่แล้วอธิบายจุดเด่น บรรยากาศ และเหตุผลที่เหมาะกับการพักผ่อน'
+            }
+        };
+
+        function switchTab(mode) {
+            currentMode = mode;
+            const config = modesConfig[mode];
+
+            // Reset Tabs styling
+            ['coach', 'dream', 'story', 'places'].forEach(m => {
+                const tab = document.getElementById(`tab-${m}`);
+                tab.classList.remove('tab-active');
+                tab.classList.add('tab-inactive');
+            });
+
+            // Set Active Tab
+            const activeTab = document.getElementById(`tab-${mode}`);
+            activeTab.classList.remove('tab-inactive');
+            activeTab.classList.add('tab-active');
+
+            // Update Text Content
+            document.getElementById('section-title').innerText = config.title;
+            document.getElementById('section-desc').innerText = config.desc;
+            const inputEl = document.getElementById('user-input');
+            inputEl.placeholder = config.placeholder;
+            inputEl.value = ''; // Clear input on switch
+
+            // Hide outputs
+            document.getElementById('output-box').classList.add('hidden');
+        }
+
+        async function generateResponse() {
+            const inputEl = document.getElementById('user-input');
+            const text = inputEl.value.trim();
+            
+            if (!text) {
+                // Show temporary error via placeholder
+                const originalPlaceholder = inputEl.placeholder;
+                inputEl.placeholder = 'กรุณาพิมพ์ข้อความก่อนส่ง...';
+                inputEl.classList.add('ring-2', 'ring-red-500/50');
+                setTimeout(() => {
+                    inputEl.placeholder = originalPlaceholder;
+                    inputEl.classList.remove('ring-2', 'ring-red-500/50');
+                }, 2000);
+                return;
+            }
+
+            const config = modesConfig[currentMode];
+            
+            // UI State: Loading
+            document.getElementById('loading-text').innerText = config.loading;
+            document.getElementById('loading-box').classList.remove('hidden');
+            document.getElementById('output-box').classList.add('hidden');
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                let fullPrompt = config.prompt;
+                if(currentMode === 'places') {
+                    fullPrompt = fullPrompt.replace('[INPUT]', text);
+                } else {
+                    fullPrompt += `"${text}"`;
+                }
+
+                const payload = {
+                    contents: [{ parts: [{ text: fullPrompt }] }]
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0) {
+                    let responseText = result.candidates[0].content.parts[0].text;
+                    
+                    // Setup UI Output Title
+                    document.getElementById('output-title').innerText = config.outTitle;
+
+                    // Handle Map for 'places' mode
+                    const mapContainer = document.getElementById('map-container');
+                    const mapIframe = document.getElementById('map-iframe');
+                    let displayHtml = '';
+
+                    if (currentMode === 'places') {
+                        // Extract Place Name
+                        const match = responseText.match(/สถานที่:\s*(.+)/);
+                        if (match && match[1]) {
+                            const placeName = match[1].trim();
+                            // Set map iframe URL
+                            const encodedPlace = encodeURIComponent(placeName + ' Thailand');
+                            mapIframe.src = `https://maps.google.com/maps?q=${encodedPlace}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+                            mapContainer.classList.remove('hidden');
+                            
+                            // Remove the "สถานที่: ..." line from the output to make it cleaner
+                            responseText = responseText.replace(/สถานที่:\s*(.+)/, '');
+                        } else {
+                            // Fallback if AI didn't format properly
+                            mapContainer.classList.add('hidden');
+                        }
+                    } else {
+                        mapContainer.classList.add('hidden');
+                        mapIframe.src = '';
+                    }
+
+                    // Format Markdown to HTML roughly
+                    // Bold
+                    responseText = responseText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-300 font-semibold">$1</strong>');
+                    // Lists (Lines starting with * or -)
+                    responseText = responseText.replace(/^[\*\-]\s+(.*)$/gm, '<li class="ml-4 mb-1 border-l-2 border-purple-500/50 pl-2">$1</li>');
+                    // Wrap lists in ul
+                    responseText = responseText.replace(/(<li.*<\/li>)/s, '<ul class="my-3 space-y-1">$1</ul>');
+                    // Line breaks
+                    responseText = responseText.replace(/\n/g, '<br>');
+                    
+                    document.getElementById('ai-output-text').innerHTML = responseText;
+
+                    // Handle Monetization Banners visibility
+                    const productRec = document.getElementById('product-recommendation');
+                    const agodaBanner = document.getElementById('booking-affiliate-banner');
+                    
+                    productRec.classList.add('hidden');
+                    agodaBanner.classList.add('hidden');
+
+                    if (currentMode === 'coach') {
+                        productRec.classList.remove('hidden');
+                    } else if (currentMode === 'places') {
+                        agodaBanner.classList.remove('hidden');
+                    }
+
+                    // Show Output
+                    document.getElementById('output-box').classList.remove('hidden');
+                    
+                    // Scroll to results smoothly
+                    setTimeout(() => {
+                        document.getElementById('output-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+
+                } else {
+                    throw new Error("ไม่มีข้อมูลตอบกลับจาก AI");
+                }
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('ai-output-text').innerHTML = `<p class="text-red-400">เกิดข้อผิดพลาดในการเชื่อมต่อระบบ กรุณาลองใหม่อีกครั้ง</p>`;
+                document.getElementById('output-box').classList.remove('hidden');
+            } finally {
+                // UI State: Reset
+                document.getElementById('loading-box').classList.add('hidden');
+                document.getElementById('submit-btn').disabled = false;
+                document.getElementById('submit-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>
